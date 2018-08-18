@@ -1,0 +1,16 @@
+{
+  "name": "spritesheet2gif-api",
+  "version": "1.0.0",
+  "author": "Charles Stover <docker@charlesstover.com>",
+  "description": "A backend API for converting spritesheets to GIFs.",
+  "license": "MIT",
+  "repository": "https://github.com/CharlesStover/spritesheet2gif-api.git",
+  "scripts": {
+    "build": "docker build --file Dockerfile --tag charlesstover/spritesheet2gif-api .",
+    "exec": "docker exec -it spritesheet2gif-api /bin/bash",
+    "logs": "docker logs spritesheet2gif-api",
+    "re": "yarn stop && yarn build && yarn start",
+    "start": "docker run --detach --name spritesheet2gif-api --network reverse-proxy charlesstover/spritesheet2gif-api",
+    "stop": "docker stop spritesheet2gif-api && docker rm spritesheet2gif-api"
+  }
+}
