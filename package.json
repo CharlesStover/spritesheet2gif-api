@@ -10,7 +10,7 @@
     "exec": "docker exec -it spritesheet2gif-api /bin/bash",
     "logs": "docker logs spritesheet2gif-api",
     "re": "yarn stop && yarn build && yarn start",
-    "start": "docker run --detach --name spritesheet2gif-api --network reverse-proxy charlesstover/spritesheet2gif-api",
+    "start": "docker run --detach --env ACCESS_CONTROL_ALLOW_ORIGIN=http://local.host:3000 --name spritesheet2gif-api --network reverse-proxy charlesstover/spritesheet2gif-api",
     "stop": "docker stop spritesheet2gif-api && docker rm spritesheet2gif-api"
   }
 }

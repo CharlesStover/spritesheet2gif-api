@@ -1,11 +1,10 @@
 <?php
 
-define('FILESIZE_LIMIT', 10240); // kilobytes
-define('ORIGIN', 'http://local.host:3000');
+define('FILESIZE_LIMIT', 10); // megabytes
 
 header('Access-Control-Allow-Headers: content-type');
 header('Access-Control-Allow-Methods: OPTIONS, POST');
-header('Access-Control-Allow-Origin: ' . ORIGIN);
+header('Access-Control-Allow-Origin: ' . $_ENV['ACCESS_CONTROL_ALLOW_ORIGIN']);
 
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
   exit();
@@ -21,7 +20,7 @@ function error($message, $status = 400) {
 }
 
 // Validate POST parameters exist.
-$post_params = [ 'dimension', 'duration', 'durationtype', 'matte', 'tile' ];
+$post_params = [ 'dimension', 'direction', 'duration', 'matte', 'perFrame' ];
 foreach ($post_params as $post_param) {
   if (!array_key_exists($post_param, $_POST)) {
     error('`' . $post_param . '` must exist.');
@@ -35,8 +34,8 @@ if (!array_key_exists('sheet', $_FILES)) {
 
 // Validate enumerable parameters.
 $enums = [
-  'durationtype' => [ 'per frame', 'total' ],
-  'tile' => [ 'auto', 'horizontal', 'vertical' ]
+  'direction' => [ 'automatic', 'horizontal', 'vertical' ],
+  'perFrame' => [ true, false ]
 ];
 foreach ($enums as $post_param => $enum) {
   if (!in_array($_POST[$post_param], $enum)) {
@@ -61,8 +60,8 @@ if (!file_exists($_FILES['sheet']['tmp_name']))
   error('The uploaded file has expired. Please try again.');
 
 // If the file is larger than XkB, give an error.
-if ($_FILES['sheet']['size'] > 1024 * FILESIZE_LIMIT)
-  error('The uploaded file is greater than the ' . FILESIZE_LIMIT . ' kilobyte limit.');
+if ($_FILES['sheet']['size'] > 1024 * 1024 * FILESIZE_LIMIT)
+  error('The uploaded file is greater than the ' . FILESIZE_LIMIT . ' megabyte limit.');
 
 // Check if the image is valid by collecting metadata.
 $size = getimagesize($_FILES['sheet']['tmp_name']);
@@ -76,12 +75,12 @@ if (!array_key_exists(1, $type))
   error('The uploaded file must be a GIF, JPEG, or PNG.');
 $type = $type[1];
 
-$tile_dir =
-  $_POST['tile'] == 'auto' ?
+$direction =
+  $_POST['direction'] == 'automatic' ?
     $size[0] >= $size[1] ?
       'horizontal' :
       'vertical' :
-  $_POST['tile'];
+  $_POST['direction'];
 
 $dimension =
   $_POST['dimension'] == 0 ?
@@ -98,19 +97,19 @@ if (
   error('The sprite sheet only contains one frame.');
 
 // Sheet has to be divisible by sprite size.
-if ($size[$tile_dir == 'horizontal' ? 0 : 1] % $dimension) {
+if ($size[$direction == 'horizontal' ? 0 : 1] % $dimension) {
   error(
     'The ' .
     (
-      $tile_dir == 'horizontal' ?
+      $direction == 'horizontal' ?
         'width' :
         'height'
     ) .
     ' of the image is not divisible by ' .
     (
-      $_POST['tile'] == 'auto' ?
+      $_POST['direction'] == 'automatic' ?
         'the ' . (
-          $tile_dir == 'horizontal' ?
+          $direction == 'horizontal' ?
           'height' :
           'width'
         ) :
@@ -120,7 +119,7 @@ if ($size[$tile_dir == 'horizontal' ? 0 : 1] % $dimension) {
   );
 }
 
-$count_frames = $size[$tile_dir == 'horizontal' ? 0 : 1] / $dimension;
+$count_frames = $size[$direction == 'horizontal' ? 0 : 1] / $dimension;
 
 // convert matte from hex to rgb
 preg_match('/^\#([\da-zA-Z]{2})([\da-zA-Z]{2})([\da-zA-Z]{2})$/', $_POST['matte'], $matte);
@@ -134,8 +133,8 @@ $duration = round($_POST['duration'] / 10); // GifCreator is off by 10x for some
 $durations = [];
 
 // Calculate frames for GIF.
-$height = $tile_dir == 'horizontal' ? $size[1] : $dimension;
-$width = $tile_dir == 'horizontal' ? $dimension : $size[0];
+$height = $direction == 'horizontal' ? $size[1] : $dimension;
+$width = $direction == 'horizontal' ? $dimension : $size[0];
 for ($x = 0; $x < $count_frames; $x++) {
   $frame = imagecreatetruecolor($width, $height);
   //imagesavealpha($frame, true);
@@ -145,14 +144,14 @@ for ($x = 0; $x < $count_frames; $x++) {
   imagecopyresampled(
     $frame, $sheet, // to frame, from sheet
     0, 0, // to
-    $tile_dir == 'horizontal' ? $x * $dimension : 0, $tile_dir == 'vertical' ? $x * $dimension : 0, // from
+    $direction == 'horizontal' ? $x * $dimension : 0, $direction == 'vertical' ? $x * $dimension : 0, // from
     $width, $height, // to width/height
     $width, $height // from width/height
   );
   array_push($frames, $frame);
 
   // Duration of frame
-  if ($_POST['durationtype'] == 'frame')
+  if ($_POST['perFrame'])
     array_push($durations, $duration);
   else {
     $d = round($duration / ($count_frames - $x));
