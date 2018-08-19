@@ -1,10 +1,15 @@
 <?php
 
 define('FILESIZE_LIMIT', 10240); // kilobytes
-define('ORIGIN', 'localhost.charlesstover.com');
+define('ORIGIN', 'http://local.host:3000');
 
-header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: content-type');
+header('Access-Control-Allow-Methods: OPTIONS, POST');
 header('Access-Control-Allow-Origin: ' . ORIGIN);
+
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+  exit();
+}
 
 // Error handler
 function error($message, $status = 400) {
