@@ -1,6 +1,6 @@
 FROM php:7.2-apache
 LABEL Author "Charles Stover <docker@charlesstover.com>"
-ENV ACCESS_CONTROL_ALLOW_ORIGIN https://charlesstover.com:443
+ENV ACCESS_CONTROL_ALLOW_ORIGIN https://charlesstover.com
 
 # Dependencies
 RUN apt-get update
