@@ -1,6 +1,10 @@
 <?php
 
-define('FILESIZE_LIMIT', 1024); // kilobytes
+define('FILESIZE_LIMIT', 10240); // kilobytes
+define('ORIGIN', 'localhost.charlesstover.com');
+
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Origin: ' . ORIGIN);
 
 // Error handler
 function error($message, $status = 400) {
